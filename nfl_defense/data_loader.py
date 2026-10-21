@@ -23,6 +23,20 @@ from . import config
 _NA_VALUES = ["NA", "", "NaN", "nan", "None"]
 
 
+def _check_data_dir(data_dir: Path) -> None:
+    """Vérifie la présence des CSV et lève une erreur LISIBLE sinon."""
+    if (data_dir / config.PLAYS_FILE).exists():
+        return
+    raise FileNotFoundError(
+        "\n\n  Données NFL introuvables.\n"
+        f"  Dossier essayé : {data_dir}\n\n"
+        "  -> Vérifie que le dépôt de données est cloné, puis indique son dossier :\n\n"
+        "       python main.py --data-dir /chemin/vers/le/dossier/data\n\n"
+        "     (le dossier doit contenir plays.csv, games.csv, players.csv,\n"
+        "      pffScoutingData.csv et le sous-dossier tracking/)\n"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Fichiers "légers" : chargés en entier (et mis en cache).
 # ---------------------------------------------------------------------------
@@ -41,6 +55,7 @@ def load_games(data_dir: Path | None = None) -> pd.DataFrame:
 def load_plays(data_dir: Path | None = None) -> pd.DataFrame:
     """Charge plays.csv : 1 ligne = 1 action (le cœur de l'analyse)."""
     data_dir = config.get_data_dir(data_dir)
+    _check_data_dir(data_dir)
     return pd.read_csv(data_dir / config.PLAYS_FILE, na_values=_NA_VALUES)
 
 
