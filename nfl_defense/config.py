@@ -25,13 +25,57 @@ from pathlib import Path
 #     NFL-player-tracking-.../   (ce projet)
 #     nfl-data/data/             (les CSV + tracking/)
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DATA_DIR = _PROJECT_ROOT.parent / "nfl-data" / "data"
+
+# --- Noms de fichiers (définis AVANT l'auto-détection qui les utilise) --------
+
+GAMES_FILE = "games.csv"
+PLAYS_FILE = "plays.csv"
+PLAYERS_FILE = "players.csv"
+PFF_FILE = "pffScoutingData.csv"
+TRACKING_DIR = "tracking"
+TRACKING_PREFIX = "tracking_"  # tracking/tracking_<gameId>.csv
+
+# Noms possibles du dossier de données, selon la façon dont il a été cloné.
+# (Le dépôt cloné sans nom explicite s'appelle "nfl-big-data-bowl-regional-event-data".)
+_DATA_REPO_NAMES = (
+    "nfl-data",
+    "nfl-big-data-bowl-regional-event-data",
+)
+
+
+def _candidate_data_dirs() -> list[Path]:
+    """Emplacements plausibles du dossier `data/`, par ordre de préférence.
+
+    On cherche à côté du projet ET dans le dossier parent (ex. ~/Code/),
+    sous chacun des noms de dépôt connus, avec ou sans sous-dossier `data/`.
+    """
+    bases = [_PROJECT_ROOT, _PROJECT_ROOT.parent, _PROJECT_ROOT.parent.parent]
+    out: list[Path] = []
+    for base in bases:
+        for name in _DATA_REPO_NAMES:
+            out.append(base / name / "data")  # dépôt cloné -> data/
+            out.append(base / name)            # au cas où les CSV sont à la racine
+        out.append(base / "data")              # dossier "data" direct
+    return out
+
+
+def _autodetect_data_dir() -> Path:
+    """Renvoie le premier emplacement candidat contenant plays.csv, sinon le défaut."""
+    for cand in _candidate_data_dirs():
+        if (cand / PLAYS_FILE).exists():
+            return cand.resolve()
+    # Rien trouvé : on renvoie un défaut lisible pour le message d'erreur.
+    return (_PROJECT_ROOT.parent / _DATA_REPO_NAMES[0] / "data")
+
+
+# Dossier par défaut, détecté automatiquement au chargement du module.
+DEFAULT_DATA_DIR = _autodetect_data_dir()
 
 
 def get_data_dir(override: str | os.PathLike | None = None) -> Path:
     """Retourne le dossier de données effectif.
 
-    Priorité : override explicite > variable d'env NFL_DATA_DIR > défaut.
+    Priorité : override explicite > variable d'env NFL_DATA_DIR > auto-détection.
     Si le chemin fourni pointe vers un dossier contenant un sous-dossier
     `data/`, on bascule automatiquement dedans (tolérance d'usage).
     """
@@ -43,19 +87,10 @@ def get_data_dir(override: str | os.PathLike | None = None) -> Path:
         path = DEFAULT_DATA_DIR
 
     # Tolérance : si on nous donne la racine du dépôt, descendre dans data/.
-    if (path / "data" / PLAYS_FILE).exists():
+    if not (path / PLAYS_FILE).exists() and (path / "data" / PLAYS_FILE).exists():
         path = path / "data"
     return path
 
-
-# --- Noms de fichiers ---------------------------------------------------------
-
-GAMES_FILE = "games.csv"
-PLAYS_FILE = "plays.csv"
-PLAYERS_FILE = "players.csv"
-PFF_FILE = "pffScoutingData.csv"
-TRACKING_DIR = "tracking"
-TRACKING_PREFIX = "tracking_"  # tracking/tracking_<gameId>.csv
 
 # --- Dossier de sortie --------------------------------------------------------
 
