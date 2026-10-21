@@ -92,6 +92,9 @@ Pour viser une action précise (visuels de tracking) :
 python main.py --play 2021090900 97
 ```
 
+Génère aussi `animation_action.gif` (l'action rejouée image par image) et
+imprime un **verdict** de la défense sur l'action analysée.
+
 ### Dashboard interactif (relie les 3 axes)
 
 ```bash
@@ -100,8 +103,18 @@ streamlit run dashboard/app.py
 
 On filtre un contexte (défense, down, formation, nb de rushers) et on voit d'un
 coup : la tactique choisie (matrice), le résultat (yards / sacks / complétion),
-et le mouvement sur le terrain (trajectoires + carte thermique d'une action du
-filtre courant).
+et surtout, pour **une action choisie** :
+
+- 🎬 **une animation image par image** (slider) : les joueurs bougent du snap à
+  la fin de l'action. Rouge = pass rush, orange = couverture, bleu = attaque ;
+  chaque joueur affiche un vecteur direction × vitesse ;
+- 📊 **les données clés par joueur** : vitesse de pointe, vitesse moyenne,
+  accélération max, distance parcourue, rôle et poste ;
+- 🧭 **un verdict précis** : *bonne ou mauvaise défense sur cette action ?*
+  Une note sur 100 (du point de vue de la défense) avec les raisons :
+  résultat de l'action (sack / incomplète / yards concédés), pression générée
+  (sack / hit / hurry, taille du blitz) et explosivité du rush (vitesse de pointe).
+  C'est **descriptif** : fondé uniquement sur les données de l'action.
 
 ---
 
@@ -115,11 +128,13 @@ nfl_defense/
 │   ├── pressure.py      A. pression : rushers → sacks / hurries / yards
 │   ├── coverage.py      B. couverture : Man vs Zone, Cover-N, MATRICE TACTIQUE
 │   ├── context.py       C. contexte : 3e & long, box, formation
-│   ├── movement.py      D. déplacements : vitesse de pointe, positions au snap/arrivée
-│   └── physical.py      E. physique : poids/taille vs sacks (DESCRIPTIF)
+│   ├── movement.py      D. déplacements : vitesse, accél., distance, positions, données par joueur
+│   ├── physical.py      E. physique : poids/taille vs sacks (DESCRIPTIF)
+│   └── verdict.py       Verdict par action : bonne/mauvaise défense + note/100 + raisons
 └── viz/
     ├── field.py         dessin du terrain NFL
-    └── plots.py         heatmaps, barres, nuage, trajectoires, carte thermique
+    ├── plots.py         heatmaps, barres, nuage, trajectoires, carte thermique
+    └── animation.py     animation image par image (slider Streamlit + export GIF)
 main.py                  pipeline CLI
 dashboard/app.py         dashboard Streamlit à filtres
 tests/test_helpers.py    tests légers (logique pure)

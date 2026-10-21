@@ -27,8 +27,9 @@ matplotlib.use("Agg")  # backend fichier (pas d'affichage interactif)
 import matplotlib.pyplot as plt
 
 from nfl_defense import config, data_loader
-from nfl_defense.analysis import context, coverage, physical, pressure, movement
-from nfl_defense.viz import plots
+from nfl_defense.analysis import (context, coverage, physical, pressure,
+                                  movement, verdict)
+from nfl_defense.viz import plots, animation
 
 
 def _print_table(title: str, df) -> None:
@@ -136,6 +137,28 @@ def run(data_dir: Path | None, play_ref: tuple[int, int] | None) -> None:
             speeds = movement.peak_speed_per_player(track)
             _print_table("D. DÉPLACEMENTS — vitesse de pointe par joueur (top 5)",
                          speeds.head(5))
+
+            # Animation GIF de l'action (pour présentation).
+            try:
+                anim = animation.animate_play(
+                    track, offense_team=off_team, pff=pff,
+                    game_id=gid, play_id=pid, interval_ms=100)
+                gif_path = out / "animation_action.gif"
+                anim.save(gif_path, writer="pillow", fps=10)
+                plt.close("all")
+                print(f"[gif]   Animation -> {gif_path}")
+            except Exception as exc:  # noqa: BLE001
+                print(f"[gif]   Animation non générée ({exc}). "
+                      "Installer 'pillow' pour l'export GIF.")
+
+            # VERDICT de l'action : bonne ou mauvaise défense ?
+            if not row.empty:
+                v = verdict.play_verdict(row.iloc[0], play_tracking=track, pff=pff)
+                print(f"\n{'=' * 70}\nVERDICT DÉFENSE SUR L'ACTION "
+                      f"(gameId={gid}, playId={pid})\n{'=' * 70}")
+                print(f"{v['emoji']} {v['label']} — {v['note_sur_100']}/100")
+                for reason in v["raisons"]:
+                    print(f"  - {reason}")
 
     print("\nTerminé. Images et tableaux dans :", out)
 
