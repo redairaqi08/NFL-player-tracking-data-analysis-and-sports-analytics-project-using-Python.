@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Sorties générées par le pipeline (images, tableaux)
+outputs/
+
+# Données locales (ne pas versionner le dataset Big Data Bowl)
+nfl-data/
+data/
